@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HUERTA</title>
+  <style>
+    :root {
+      --bg: #f6fbf6;
+      --card: #ffffff;
+      --line: #dbe7db;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --green: #2f7d32;
+      --green-2: #e8f5e9;
+      --danger: #b91c1c;
+      --shadow: 0 10px 30px rgba(0,0,0,.06);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: linear-gradient(180deg, #eef9ef 0%, #faf8f4 100%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header, .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+    .header {
+      padding: 22px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    h1 { margin: 0 0 8px; font-size: 34px; }
+    .sub { margin: 0; color: var(--muted); }
+    .actions, .row, .tabs { display: flex; gap: 10px; flex-wrap: wrap; }
+    button, select, input, textarea {
+      font: inherit;
+      border-radius: 14px;
+      border: 1px solid #d7ded7;
+      padding: 11px 12px;
+      background: white;
+      color: var(--text);
+    }
+    button {
+      cursor: pointer;
+      background: var(--green);
+      color: white;
+      border: none;
+      padding: 11px 14px;
+    }
+    button.secondary {
+      background: white;
+      color: var(--text);
+      border: 1px solid #d7ded7;
+    }
+    button.ghost {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid #f0caca;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin: 16px 0;
+    }
+    .stat {
+      padding: 18px;
+    }
+    .stat .label { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+    .stat .value { font-size: 32px; font-weight: 700; }
+    .tabs { margin: 14px 0; }
+    .tab-btn {
+      background: white;
+      color: var(--text);
+      border: 1px solid #d7ded7;
+    }
+    .tab-btn.active {
+      background: var(--green);
+      color: white;
+    }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card { padding: 18px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .field { display: flex; flex-direction: column; gap: 8px; }
+    .field label { font-size: 14px; color: #374151; }
+    textarea { min-height: 110px; resize: vertical; }
+    .full { grid-column: 1 / -1; }
+    .filters {
+      display: grid;
+      grid-template-columns: 1.4fr .8fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .entry {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-top: 10px;
+    }
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--line);
+      background: #f8faf8;
+    }
+    .badge.green { background: var(--green); color: white; border: none; }
+    .meta { color: var(--muted); font-size: 14px; }
+    .empty {
+      border: 1px dashed #cdd8cd;
+      border-radius: 18px;
+      padding: 30px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1.4fr .9fr;
+      gap: 14px;
+    }
+    .bars { display: grid; gap: 10px; margin-top: 8px; }
+    .bar-row { display: grid; grid-template-columns: 160px 1fr 46px; gap: 10px; align-items: center; }
+    .bar-track {
+      background: #edf3ed;
+      border-radius: 999px;
+      overflow: hidden;
+      height: 12px;
+    }
+    .bar-fill { background: var(--green); height: 100%; }
+    .help p { margin: 0 0 10px; color: #475569; }
+    @media (max-width: 900px) {
+      .stats, .grid, .summary-grid, .filters { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 120px 1fr 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>HUERTA</h1>
+        <p class="sub">Cuaderno digital para registrar tu actividad y exportarla a Excel o CSV.</p>
+      </div>
+      <div class="actions">
+        <button class="secondary" id="exportCsvBtn">Exportar CSV</button>
+        <button id="exportJsonBtn">Exportar copia</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="card stat"><div class="label">Total registros</div><div class="value" id="statTotal">0</div></div>
+      <div class="card stat"><div class="label">Mes más reciente</div><div class="value" id="statMonth">-</div></div>
+      <div class="card stat"><div class="label">Total depósitos</div><div class="value" id="statDepositos">0</div></div>
+      <div class="card stat"><div class="label">Total horas</div><div class="value" id="statHoras">0</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="registro">Nuevo registro</button>
+      <button class="tab-btn" data-tab="historial">Historial</button>
+      <button class="tab-btn" data-tab="resumen">Resumen</button>
+    </div>
+
+    <div class="panel active" id="panel-registro">
+      <div class="card">
+        <h3>Añadir actividad</h3>
+        <div class="grid">
+          <div class="field"><label>Fecha</label><input id="fecha" type="date" /></div>
+          <div class="field"><label>Tipo</label><select id="tipo"></select></div>
+          <div class="field" id="subcategoriaField"><label>Subcategoría</label><select id="subcategoria"></select></div>
+          <div class="field"><label>Cultivo</label><input id="cultivo" placeholder="Tomate, lechuga, olivo..." /></div>
+          <div class="field"><label>Cantidad</label><input id="cantidad" type="number" step="any" placeholder="Opcional" /></div>
+          <div class="field" id="depositosField"><label>Depósitos</label><input id="depositos" type="number" step="any" placeholder="Solo para riego" /></div>
+          <div class="field"><label>Tiempo (horas)</label><input id="tiempo_horas" type="number" step="any" placeholder="Opcional" /></div>
+          <div class="field"><label>Coste</label><input id="coste" type="number" step="any" placeholder="Opcional" /></div>
+          <div class="field full"><label>Notas</label><textarea id="notas" placeholder="Detalles libres: kg, variedad, incidencias, tipo de riego..."></textarea></div>
+          <div class="full row">
+            <button id="guardarBtn">Guardar registro</button>
+            <button class="secondary" id="restaurarBtn">Restaurar base original</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-historial">
+      <div class="card">
+        <h3>Historial filtrable</h3>
+        <div class="filters">
+          <input id="search" placeholder="Buscar por cultivo, actividad, notas..." />
+          <select id="monthFilter"><option value="all">Todos los meses</option></select>
+          <select id="activityFilter"><option value="all">Todas las actividades</option></select>
+        </div>
+        <div id="historialList"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-resumen">
+      <div class="summary-grid">
+        <div class="card">
+          <h3>Actividades más registradas</h3>
+          <div id="bars" class="bars"></div>
+        </div>
+        <div class="card help">
+          <h3>Cómo funciona</h3>
+          <p>Los registros se guardan en este navegador.</p>
+          <p>Puedes exportar a CSV para abrirlo en Excel.</p>
+          <p>En PLANTACIÓN no hay subcategoría: escribes el cultivo y la cantidad.</p>
+          <p>En RIEGO puedes guardar depósitos y tiempo por separado.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'HUERTA-html-registros-v1';
+    const activityMap = {
+      'RIEGO': ['CÉSPED', 'VERDURA', 'FRUTALES', 'OLIVOS', 'AVELLANOS', 'ÁRBOLES ABAJO', 'FLORES', 'ROSALES'],
+      'SIEGA': ['CÉSPED', 'CAMINOS', 'FRUTALES', 'PERRA'],
+      'DESBROZADORA': ['IZQUIERDA', 'FRUTALES', 'ABAJO', 'OLIVOS'],
+      'GASOLINA': ['CLIO', 'TODO TERRENO', 'MÁQUINAS'],
+      'ABONO': ['HUERTA', 'FRUTALES'],
+      'SEMILLERO': ['VARIOS'],
+      'PLANTACIÓN': [],
+      'FLORES': ['VARIADO'],
+      'COSECHA': ['GENERAL'],
+      'PODA': ['ROSALES', 'FRUTALES', 'NOGALES', 'OLIVOS', 'OTROS']
+    };
+
+    const initialEntries = [
+      { id: 1, fecha: '2025-01-03', tipo: 'RIEGO', subcategoria: 'CÉSPED', cultivo: 'tomate', cantidad: '', depositos: 2, tiempo_horas: '', coste: '', notas: 'depósitos de 1000L', source: 'base' },
+      { id: 2, fecha: '2025-01-04', tipo: 'RIEGO', subcategoria: 'FRUTALES', cultivo: '', cantidad: '', depositos: '', tiempo_horas: 1.5, coste: '', notas: 'riego por goteo', source: 'base' },
+      { id: 3, fecha: '2025-01-05', tipo: 'COSECHA', subcategoria: 'GENERAL', cultivo: 'tomate cherry', cantidad: 1.5, depositos: '', tiempo_horas: '', coste: '', notas: 'kg recogidos', source: 'base' }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    const today = new Date().toISOString().slice(0, 10);
+    let entries = loadEntries();
+
+    function loadEntries() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? JSON.parse(saved) : [...initialEntries];
+      } catch {
+        return [...initialEntries];
+      }
+    }
+
+    function saveEntries() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }
+
+    function monthLabel(monthStr) {
+      const [year, month] = monthStr.split('-');
+      return new Date(Number(year), Number(month) - 1, 1).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+    }
+
+    function prettyDate(date) {
+      return new Date(date).toLocaleDateString('es-ES');
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function populateTipos() {
+      $('tipo').innerHTML = Object.keys(activityMap).map(tipo => `<option value="${tipo}">${tipo}</option>`).join('');
+      $('activityFilter').innerHTML = '<option value="all">Todas las actividades</option>' + Object.keys(activityMap).map(tipo => `<option value="${tipo}">${tipo}</option>`).join('');
+      $('fecha').value = today;
+      $('tipo').value = 'RIEGO';
+      updateSubcategorias();
+    }
+
+    function updateSubcategorias() {
+      const tipo = $('tipo').value;
+      const subs = activityMap[tipo] || [];
+      const field = $('subcategoriaField');
+      const select = $('subcategoria');
+      const showDepositos = tipo === 'RIEGO';
+      $('depositosField').style.display = showDepositos ? 'flex' : 'none';
+      if (subs.length === 0) {
+        field.style.display = 'none';
+        select.innerHTML = '';
+      } else {
+        field.style.display = 'flex';
+        select.innerHTML = subs.map(s => `<option value="${s}">${s}</option>`).join('');
+      }
+    }
+
+    function getFormData() {
+      return {
+        fecha: $('fecha').value,
+        tipo: $('tipo').value,
+        subcategoria: $('subcategoria').value || '',
+        cultivo: $('cultivo').value.trim(),
+        cantidad: $('cantidad').value,
+        depositos: $('depositos').value,
+        tiempo_horas: $('tiempo_horas').value,
+        coste: $('coste').value,
+        notas: $('notas').value.trim()
+      };
+    }
+
+    function clearForm(keepDate = true, keepTipo = true) {
+      const oldFecha = $('fecha').value;
+      const oldTipo = $('tipo').value;
+      $('cultivo').value = '';
+      $('cantidad').value = '';
+      $('depositos').value = '';
+      $('tiempo_horas').value = '';
+      $('coste').value = '';
+      $('notas').value = '';
+      if (keepDate) $('fecha').value = oldFecha; else $('fecha').value = today;
+      if (keepTipo) $('tipo').value = oldTipo;
+      updateSubcategorias();
+    }
+
+    function addEntry() {
+      const form = getFormData();
+      if (!form.fecha || !form.tipo) return;
+      if (form.tipo === 'PLANTACIÓN' && !form.cultivo) {
+        alert('En PLANTACIÓN debes escribir el cultivo.');
+        return;
+      }
+      entries.unshift({ id: Date.now(), ...form, source: 'app' });
+      saveEntries();
+      clearForm(true, true);
+      renderAll();
+    }
+
+    function deleteEntry(id) {
+      entries = entries.filter(e => e.id !== id);
+      saveEntries();
+      renderAll();
+    }
+
+    function resetBase() {
+      if (!confirm('¿Restaurar la base original? Se borrarán los registros añadidos en este navegador.')) return;
+      entries = [...initialEntries];
+      saveEntries();
+      renderAll();
+    }
+
+    function filteredEntries() {
+      const search = $('search').value.trim().toLowerCase();
+      const month = $('monthFilter').value;
+      const activity = $('activityFilter').value;
+      return [...entries]
+        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.id - a.id)
+        .filter(entry => {
+          const haystack = [entry.tipo, entry.subcategoria, entry.cultivo, entry.notas, entry.cantidad, entry.depositos].join(' ').toLowerCase();
+          const okSearch = !search || haystack.includes(search);
+          const okMonth = month === 'all' || entry.fecha.startsWith(month);
+          const okActivity = activity === 'all' || entry.tipo === activity;
+          return okSearch && okMonth && okActivity;
+        });
+    }
+
+    function renderStats() {
+      $('statTotal').textContent = entries.length;
+      const months = [...new Set(entries.map(e => e.fecha.slice(0, 7)))].sort().reverse();
+      $('statMonth').textContent = months[0] ? monthLabel(months[0]) : '-';
+      $('statDepositos').textContent = entries.reduce((sum, e) => sum + (Number(e.depositos) || 0), 0);
+      $('statHoras').textContent = entries.reduce((sum, e) => sum + (Number(e.tiempo_horas) || 0), 0);
+
+      const monthSelect = $('monthFilter');
+      const current = monthSelect.value || 'all';
+      monthSelect.innerHTML = '<option value="all">Todos los meses</option>' + months.map(m => `<option value="${m}">${monthLabel(m)}</option>`).join('');
+      monthSelect.value = months.includes(current) ? current : 'all';
+    }
+
+    function renderHistorial() {
+      const list = $('historialList');
+      const items = filteredEntries();
+      if (!items.length) {
+        list.innerHTML = '<div class="empty">No hay registros con esos filtros.</div>';
+        return;
+      }
+      list.innerHTML = items.map(entry => `
+        <div class="entry">
+          <div>
+            <div class="badges">
+              <span class="badge">${prettyDate(entry.fecha)}</span>
+              <span class="badge green">${entry.tipo}</span>
+              ${entry.subcategoria ? `<span class="badge">${entry.subcategoria}</span>` : ''}
+              <span class="badge">${entry.source === 'base' ? 'Base' : 'Añadido'}</span>
+            </div>
+            <div class="meta">
+              ${entry.cultivo ? `<div><strong>Cultivo:</strong> ${entry.cultivo}</div>` : ''}
+              ${entry.cantidad !== '' ? `<div><strong>Cantidad:</strong> ${entry.cantidad}</div>` : ''}
+              ${entry.depositos !== '' ? `<div><strong>Depósitos:</strong> ${entry.depositos}</div>` : ''}
+              ${entry.tiempo_horas !== '' ? `<div><strong>Tiempo:</strong> ${entry.tiempo_horas} h</div>` : ''}
+              ${entry.coste !== '' ? `<div><strong>Coste:</strong> ${entry.coste}</div>` : ''}
+              ${entry.notas ? `<div><strong>Notas:</strong> ${entry.notas}</div>` : ''}
+            </div>
+          </div>
+          <button class="ghost" onclick="deleteEntry(${entry.id})">Eliminar</button>
+        </div>
+      `).join('');
+    }
+
+    function renderResumen() {
+      const counts = {};
+      entries.forEach(e => counts[e.tipo] = (counts[e.tipo] || 0) + 1);
+      const data = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+      const max = data[0]?.[1] || 1;
+      $('bars').innerHTML = data.map(([name, total]) => `
+        <div class="bar-row">
+          <div>${name}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(total/max)*100}%"></div></div>
+          <div>${total}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderAll() {
+      renderStats();
+      renderHistorial();
+      renderResumen();
+    }
+
+    function exportCsv() {
+      const rows = [
+        ['fecha','tipo','subcategoria','cultivo','cantidad','depositos','tiempo_horas','coste','notas'],
+        ...entries.map(e => [e.fecha, e.tipo, e.subcategoria, e.cultivo, e.cantidad, e.depositos, e.tiempo_horas, e.coste, e.notas])
+      ];
+      const csv = rows.map(row => row.map(cell => `"${String(cell ?? '').replaceAll('"', '""')}"`).join(',')).join('\n');
+      download('HUERTA.csv', csv, 'text/csv;charset=utf-8;');
+    }
+
+    function exportBackup() {
+      download('HUERTA_copia.json', JSON.stringify(entries, null, 2), 'application/json');
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        $('panel-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    $('tipo').addEventListener('change', updateSubcategorias);
+    $('guardarBtn').addEventListener('click', addEntry);
+    $('restaurarBtn').addEventListener('click', resetBase);
+    $('search').addEventListener('input', renderHistorial);
+    $('monthFilter').addEventListener('change', renderHistorial);
+    $('activityFilter').addEventListener('change', renderHistorial);
+    $('exportCsvBtn').addEventListener('click', exportCsv);
+    $('exportJsonBtn').addEventListener('click', exportBackup);
+
+    populateTipos();
+    renderAll();
+  </script>
+</body>
+</html>
